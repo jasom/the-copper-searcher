@@ -50,24 +50,12 @@ shescape() {
     fi
 }
 
-ignore_case() {
-    cuopt_IGNORE_CASE=yes
-}
-
-case_sensitive() {
-    unset cuopt_IGNORE_CASE
-}
-
 fixed_strings() {
     cuopt_PATTERN_FORMAT=fixed
 }
 
 smart_case() {
     cuopt_IGNORE_CASE=smart
-}
-
-hidden_files() {
-    cuopt_HIDDEN_FILES=yes
 }
 
 filetype() {
@@ -91,14 +79,6 @@ list_unmatched_files() {
 grep_passthrough_arg() {
     grep_passthrough "$1"
     grep_passthrough "$2"
-}
-
-with_filename() {
-    cuopt_NO_FILENAME=yes
-}
-
-no_filename() {
-    unset cuopt_NO_FILENAME
 }
 
 search_depth() {
@@ -127,6 +107,14 @@ starting_point() {
         cuopt_STARTING_POINT="${cuopt_STARTING_POINT}${cu_RS}$1"
     else
         cuopt_STARTING_POINT="$1"
+    fi
+}
+
+positional_parameter() {
+    if test -z "${cuopt_PATTERN+x}"; then
+        cuopt_PATTERN="$1"
+    else
+        starting_point "$1"
     fi
 }
 
