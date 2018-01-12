@@ -1,0 +1,160 @@
+# Vim commands to create this:
+# %s/[{},]//g
+#: %s/^/define_lang/g
+define_lang() {
+    lang="$1"
+    lang_case="$1) add_options "
+    shift
+    lang_case="$lang_case -iname '*.$1'"
+    shift
+    for l in "$@"; do
+        lang_case="$lang_case -o -iname '*.$l'"
+    done
+    cu_LANGUAGES="$cu_LANGUAGES $lang_case ;;
+    "
+    cu_KNOWN_LANGUAGES="$cu_KNOWN_LANGUAGES${cu_KNOWN_LANGUAGES+ }$lang"
+}
+
+define_lang  "actionscript"  "as" "mxml"  
+define_lang  "ada"  "ada" "adb" "ads"  
+define_lang  "asciidoc"  "adoc" "ad" "asc" "asciidoc"  
+define_lang  "apl"  "apl"  
+define_lang  "asm"  "asm" "s"  
+define_lang  "batch"  "bat" "cmd"  
+define_lang  "bitbake"  "bb" "bbappend" "bbclass" "inc"  
+define_lang  "bro"  "bro" "bif"  
+define_lang  "cc"  "c" "h" "xs"  
+define_lang  "cfmx"  "cfc" "cfm" "cfml"  
+define_lang  "chpl"  "chpl"  
+define_lang  "clojure"  "clj" "cljs" "cljc" "cljx"  
+define_lang  "coffee"  "coffee" "cjsx"  
+define_lang  "coq"  "coq" "g" "v"  
+define_lang  "cpp"  "cpp" "cc" "C" "cxx" "m" "hpp" "hh" "h" "H" "hxx" "tpp"  
+define_lang  "crystal"  "cr" "ecr"  
+define_lang  "csharp"  "cs"  
+define_lang  "css"  "css"  
+define_lang  "cython"  "pyx" "pxd" "pxi"  
+define_lang  "delphi"  "pas" "int" "dfm" "nfm" "dof" "dpk" "dpr" "dproj" "groupproj" "bdsgroup" "bdsproj"  
+define_lang  "dlang"  "d" "di"  
+define_lang  "dot"  "dot" "gv"  
+define_lang  "ebuild"  "ebuild" "eclass"  
+define_lang  "elisp"  "el"  
+define_lang  "elixir"  "ex" "eex" "exs"  
+define_lang  "elm"  "elm"  
+define_lang  "erlang"  "erl" "hrl"  
+define_lang  "factor"  "factor"  
+define_lang  "fortran"  "f" "f77" "f90" "f95" "f03" "for" "ftn" "fpp"  
+define_lang  "fsharp"  "fs" "fsi" "fsx"  
+define_lang  "gettext"  "po" "pot" "mo"  
+define_lang  "glsl"  "vert" "tesc" "tese" "geom" "frag" "comp"  
+define_lang  "go"  "go"  
+define_lang  "groovy"  "groovy" "gtmpl" "gpp" "grunit" "gradle"  
+define_lang  "haml"  "haml"  
+define_lang  "handlebars"  "hbs"  
+define_lang  "haskell"  "hs" "lhs"  
+define_lang  "haxe"  "hx"  
+define_lang  "hh"  "h"  
+define_lang  "html"  "htm" "html" "shtml" "xhtml"  
+define_lang  "idris"  "idr" "ipkg" "lidr"  
+define_lang  "ini"  "ini"  
+define_lang  "ipython"  "ipynb"  
+define_lang  "isabelle"  "thy"  
+define_lang  "j"  "ijs"  
+define_lang  "jade"  "jade"  
+define_lang  "java"  "java" "properties"  
+define_lang  "jinja2"  "j2"  
+define_lang  "js"  "es6" "js" "jsx" "vue"  
+define_lang  "json"  "json"  
+define_lang  "jsp"  "jsp" "jspx" "jhtm" "jhtml" "jspf" "tag" "tagf"  
+define_lang  "julia"  "jl"  
+define_lang  "kotlin"  "kt"  
+define_lang  "less"  "less"  
+define_lang  "liquid"  "liquid"  
+define_lang  "lisp"  "lisp" "lsp"  
+define_lang  "log"  "log"  
+define_lang  "lua"  "lua"  
+define_lang  "m4"  "m4"  
+define_lang  "make"  "Makefiles" "mk" "mak"  
+define_lang  "mako"  "mako"  
+define_lang  "markdown"  "markdown" "mdown" "mdwn" "mkdn" "mkd" "md"  
+define_lang  "mason"  "mas" "mhtml" "mpl" "mtxt"  
+define_lang  "matlab"  "m"  
+define_lang  "mathematica"  "m" "wl"  
+define_lang  "md"  "markdown" "mdown" "mdwn" "mkdn" "mkd" "md"  
+define_lang  "mercury"  "m" "moo"  
+define_lang  "nim"  "nim"  
+define_lang  "nix"  "nix"  
+define_lang  "objc"  "m" "h"  
+define_lang  "objcpp"  "mm" "h"  
+define_lang  "ocaml"  "ml" "mli" "mll" "mly"  
+define_lang  "octave"  "m"  
+define_lang  "org"  "org"  
+define_lang  "parrot"  "pir" "pasm" "pmc" "ops" "pod" "pg" "tg"  
+define_lang  "perl"  "pl" "pm" "pm6" "pod" "t"  
+define_lang  "php"  "php" "phpt" "php3" "php4" "php5" "phtml"  
+define_lang  "pike"  "pike" "pmod"  
+define_lang  "plist"  "plist"  
+define_lang  "plone"  "pt" "cpt" "metadata" "cpy" "py" "xml" "zcml"  
+define_lang  "proto"  "proto"  
+define_lang  "puppet"  "pp"  
+define_lang  "python"  "py"  
+define_lang  "qml"  "qml"  
+define_lang  "racket"  "rkt" "ss" "scm"  
+define_lang  "rake"  "Rakefile"  
+define_lang  "restructuredtext"  "rst"  
+define_lang  "rs"  "rs"  
+define_lang  "r"  "r" "R" "Rmd" "Rnw" "Rtex" "Rrst"  
+define_lang  "rdoc"  "rdoc"  
+define_lang  "ruby"  "rb" "rhtml" "rjs" "rxml" "erb" "rake" "spec"  
+define_lang  "rust"  "rs"  
+define_lang  "salt"  "sls"  
+define_lang  "sass"  "sass" "scss"  
+define_lang  "scala"  "scala"  
+define_lang  "scheme"  "scm" "ss"  
+define_lang  "shell"  "sh" "bash" "csh" "tcsh" "ksh" "zsh" "fish"  
+define_lang  "smalltalk"  "st"  
+define_lang  "sml"  "sml" "fun" "mlb" "sig"  
+define_lang  "sql"  "sql" "ctl"  
+define_lang  "stylus"  "styl"  
+define_lang  "swift"  "swift"  
+define_lang  "tcl"  "tcl" "itcl" "itk"  
+define_lang  "tex"  "tex" "cls" "sty"  
+define_lang  "tla"  "tla"  
+define_lang  "tt"  "tt" "tt2" "ttml"  
+define_lang  "toml"  "toml"  
+define_lang  "ts"  "ts" "tsx"  
+define_lang  "twig"  "twig"  
+define_lang  "vala"  "vala" "vapi"  
+define_lang  "vb"  "bas" "cls" "frm" "ctl" "vb" "resx"  
+define_lang  "velocity"  "vm" "vtl" "vsl"  
+define_lang  "verilog"  "v" "vh" "sv"  
+define_lang  "vhdl"  "vhd" "vhdl"  
+define_lang  "vim"  "vim"  
+define_lang  "wix"  "wxi" "wxs"  
+define_lang  "wsdl"  "wsdl"  
+define_lang  "wadl"  "wadl"  
+define_lang  "xml"  "xml" "dtd" "xsl" "xslt" "ent" "tld" "plist"  
+define_lang "yaml"  "yaml" "yml"  
+
+cat <<EOF
+simple_lang() {
+    filetype "\$1" "\${1#??}"
+}
+
+language_expr() {
+    case "\$1" in
+        $cu_LANGUAGES
+        none) add_option -true ;;
+        *) die "Unknown language $1" ;;
+    esac
+}
+language_help() {
+    ech 'Known file types:'
+    ech "$cu_KNOWN_LANGUAGES"
+    exit 0
+}
+EOF
+for language in $cu_KNOWN_LANGUAGES; do
+    define_simple_option simple_lang "--$language"
+done
+define_simple_option language_help --list-file-types
