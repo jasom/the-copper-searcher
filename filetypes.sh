@@ -5,10 +5,10 @@ define_lang() {
     lang="$1"
     lang_case="$1) add_options "
     shift
-    lang_case="$lang_case -iname '*.$1'"
+    lang_case="$lang_case -name '*.$1'"
     shift
     for l in "$@"; do
-        lang_case="$lang_case -o -iname '*.$l'"
+        lang_case="$lang_case -o -name '*.$l'"
     done
     cu_LANGUAGES="$cu_LANGUAGES $lang_case ;;
     "
