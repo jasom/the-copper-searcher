@@ -10,6 +10,7 @@ define_simple_option list_unmatched_files -L --files-without-match
 define_simple_option grep_passthrough -o --only-matching
 define_simple_option grep_passthrough -c --count
 define_simple_option unrestricted -u --unrestricted
+define_simple_option skip_vcs_ignores -U --skip-vcs-ignores
 define_simple_option all_types -a --all-types
 define_argument_option grep_passthrough_arg -A --after
 define_argument_option grep_passthrough_arg -B --before

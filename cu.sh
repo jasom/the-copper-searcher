@@ -10,6 +10,7 @@ cu_STRICT_PARALLEL=yes
 
 cu_RS="$(printf '\036')"
 
+cuopt_IGNORE_FILES=".gitignore .ignore"
 cuopt_IGNORE_CASE=smart
 # Usages of this get compiled in by build.sh
 # But we have it here so changes to the scripts can be tested without building
@@ -67,6 +68,15 @@ parse_ignore_file() {
         esac
     done < "$1"
 }
+
+ignore_file() {
+    ignore_glob "$2"
+}
+
+path_to_ignore() {
+    parse_ignore_file "$2"
+}
+
 
 create_ignore_subexpr() {
     test -z "$cuopt_IGNORE_WHITELIST$cuopt_IGNORE_GLOB$cuopt_IGNORE_ABSOLUTE" && return
@@ -138,11 +148,16 @@ all_types() {
     unset cuopt_FILETYPE cuopt_IGNORE_GLOB cuopt_IGNORE_WHITELIST \
         cuopt_IGNORE_ABSOLUTE
     cuopt_SEARCH_BINARY=yes
+    unset cuopt_IGNORE_FILES
 }
 
 unrestricted() {
     all_types
     cuopt_HIDDEN_FILES=yes
+}
+
+skip_vcs_ignores() {
+    cuopt_IGNORE_FILES=.ignore
 }
 
 search_depth() {
@@ -343,9 +358,11 @@ parse_options "$@"
 test -n "$cuopt_NO_FILENAME" && cuopt_NO_GROUP=yes
 test -n "$cu_XARGS_PARALLEL" && cuopt_NO_GROUP=yes
 
-for file in .ignore .gitignore; do
-    test -f "$file" && parse_ignore_file "$file"
-done
+if test -n "$cuopt_IGNORE_FILES"; then
+    for file in $cuopt_IGNORE_FILES; do
+        test -f "$file" && parse_ignore_file "$file"
+    done
+fi
 oldIFS="$IFS"
 IFS="$cu_RS"
 set -f
