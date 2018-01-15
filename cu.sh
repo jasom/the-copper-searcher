@@ -41,6 +41,59 @@ die() {
     exit 127
 }
 
+ignore_whitelist() {
+    pattern_match "$1" "*$cu_RS*" && die "Ignore pattern '$1' contained our record separator character!"
+    cuopt_IGNORE_WHITELIST="$cuopt_IGNORE_WHITELIST${cuopt_IGNORE_WHITELIST+$cu_RS}$1"
+}
+
+ignore_absolute() {
+    pattern_match "$1" "*$cu_RS*" && die "Ignore pattern '$1' contained our record separator character!"
+    pattern_match "$1" '*\**' && ech "Warning, ignoring pattern '$1' as fnmatch absolutes not yet supported" >&2
+    cuopt_IGNORE_ABSOLUTE="$cuopt_IGNORE_ABSOLUTE${cuopt_IGNORE_ABSOLUTE+$cu_RS}$1"
+}
+
+ignore_glob() {
+    pattern_match "$1" "*$cu_RS*" && die "Ignore pattern '$1' contained our record separator character!"
+    cuopt_IGNORE_GLOB="$cuopt_IGNORE_GLOB${cuopt_IGNORE_GLOB+$cu_RS}$1"
+}
+
+parse_ignore_file() {
+    while read -r line; do
+        case "$line" in
+            '' | \#* ) : ;;
+            \!* ) ignore_whitelist "${line#!}" ;;
+            /*  ) ignore_absolute "$line" ;;
+            *   ) ignore_glob "$line" ;;
+        esac
+    done < "$1"
+}
+
+create_ignore_subexpr() {
+    test -z "$cuopt_IGNORE_WHITELIST$cuopt_IGNORE_GLOB$cuopt_IGNORE_ABSOLUTE" && return
+    add_option \(
+    if test -n "$cuopt_IGNORE_WHITELIST"; then
+        add_option \(
+        add_option -false
+        for item in $cuopt_IGNORE_WHITELIST; do
+            add_options -o -name "$item"
+        done
+        add_options \) -o
+    fi
+    if test -z "$cuopt_IGNORE_GLOB"; then
+        add_option -true
+    else
+        add_options \! \( -false
+        for item in $cuopt_IGNORE_GLOB; do
+            add_options -o -name "$item"
+        done
+        for item in $cuopt_IGNORE_ABSOLUTE; do
+            add_options -o -path ".$item"
+        done
+        add_options \)
+    fi
+    add_option \)
+}
+
 shescape() {
     if test "${1%%\'*}" = "${1}"; then
         printf \''%s'\' "$1"
@@ -81,6 +134,17 @@ grep_passthrough_arg() {
     grep_passthrough "$2"
 }
 
+all_types() {
+    unset cuopt_FILETYPE cuopt_IGNORE_GLOB cuopt_IGNORE_WHITELIST \
+        cuopt_IGNORE_ABSOLUTE
+    cuopt_SEARCH_BINARY=yes
+}
+
+unrestricted() {
+    all_types
+    cuopt_HIDDEN_FILES=yes
+}
+
 search_depth() {
     if test "$2" -eq "-1"; then
         unset cuopt_SEARCH_DEPTH
@@ -90,9 +154,9 @@ search_depth() {
 }
 
 filename_search() {
-    cuopt_PATTERN=''
+    cuopt_PATTERN='$.^'
     cuopt_FILE_MATCH_GLOB="$2"
-    grep_passthrough -l
+    list_unmatched_files
 }
 
 filename_pattern() {
@@ -137,15 +201,18 @@ add_options() {
 ## This will be expanded unquoted!!
 grep_options() {
     # if we aren't printing filenames, groups don't matter
-    if test -n "$cuopt_NO_FILENAME"; then
-        cuopt_NO_GROUP=yes
-    fi
+    test -z "$cuopt_NO_NUMBERS" && add_option -n
     if test "$cuopt_IGNORE_CASE" = smart; then
         if pattern_match "$cuopt_PATTERN" '*[[:upper:]]*'; then
             unset cuopt_IGNORE_CASE
         else
             cuopt_IGNORE_CASE=yes
         fi
+    fi
+    if test -n "$cuopt_SEARCH_BINARY"; then
+        add_option --binary-files=binary
+    else
+        add_option --binary-files=without-match
     fi
     for option in $cuopt_GREP_OPTIONS; do
         add_option "$option"
@@ -159,17 +226,14 @@ grep_options() {
 
     test -n "$cuopt_IGNORE_CASE" && add_option -i
     test -z "$cuopt_NO_COLOR" && add_option '--color=always'
-    case "${cuopt_PATTERN_FORMAT:-basic}" in
+    case "${cuopt_PATTERN_FORMAT:-extended}" in
         basic   ) add_option -G ;;
         perl    ) add_option -P ;;
         fixed   ) add_option -F ;;
         extended) add_option -E ;;
     esac
-    if test -z "${cuopt_NO_GROUP}"; then
-        add_option -Z
-    fi
+    test -z "${cuopt_NO_GROUP}" && add_option -Z
     add_options -- "$cuopt_PATTERN"
-    #printf '%s' "$cuopt_GREP_OPTIONS"
 }
 
 find_options() {
@@ -200,6 +264,7 @@ find_options() {
     fi
     test -n "$cuopt_FILE_MATCH_GLOB" && \
         add_options -name "$cuopt_FILE_MATCH_GLOB"
+    create_ignore_subexpr
     if test -z "$cu_XARGS_NULL"; then
         add_options -exec grep
         grep_options
@@ -235,10 +300,10 @@ xargs_options() {
 }
 
 group() {
-    if test -n "$cuopt_NO_GROUP" || test -n "$cuopt_NO_FILENAME"; then
+    if test -n "$cuopt_NO_GROUP"; then
         cat
     else
-        gawk 'BEGIN {OFS=FS="\000"} fname!=$1 {fname=$1; printf("%s\n",fname)} NF > 0 {for (i=1;i<NF;++i) $i = $(i+1); NF-=1; printf("%s\n",$0)}'
+        gawk 'BEGIN {OFS=FS="\000"} fname!=$1 {fname=$1; printf("\n%s\n",fname)} NF > 0 {for (i=1;i<NF;++i) $i = $(i+1); NF-=1; printf("%s\n",$0)}'
     fi
 }
 
@@ -250,15 +315,16 @@ dispatch_results() {
         tmpdir="$(mktemp -d)"
         # shellcheck disable=SC2046
         xargs $(xargs_options "$tmpdir")
+        (
         set +f
         cat "$tmpdir"/*
-        set -f
+        )
         rm -rf "$tmpdir"
     fi
 }
 
 invoke_search() {
-    oldOPTS="$(set +o)"
+    (
     set -f
     # default field splitting needed
     IFS="$cu_RS"
@@ -270,10 +336,16 @@ invoke_search() {
         #find $(find_options "$@") | parallel --null --will-cite -P 8 -m -L 1024 grep $(grep_options)
     fi | group
     #find $(find_options "$@") -print0 |xargs -P 8 -L 256 -0 grep  $(grep_options) -- "$cuopt_PATTERN"
-    eval "$oldOPTS"
+    )
 }
 
 parse_options "$@"
+test -n "$cuopt_NO_FILENAME" && cuopt_NO_GROUP=yes
+test -n "$cu_XARGS_PARALLEL" && cuopt_NO_GROUP=yes
+
+for file in .ignore .gitignore; do
+    test -f "$file" && parse_ignore_file "$file"
+done
 oldIFS="$IFS"
 IFS="$cu_RS"
 set -f
