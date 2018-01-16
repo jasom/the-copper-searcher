@@ -1,10 +1,17 @@
 #!/bin/sh
 set -e
 
+GNUGREP="$(which grep)"
+export GNUGREP
+
 cu_XARGS_NULL=yes
 cu_XARGS_PARALLEL=8
 cu_STRICT_PARALLEL=yes
 #unset cu_STRICT_PARALLEL
+
+cuopt_COLOR_LINE_NUMBER='01;33'
+cuopt_COLOR_MATCH='30;43'
+cuopt_COLOR_PATH='01;32'
 
 #unset cu_XARGS_PARALLEL
 
@@ -76,6 +83,13 @@ ignore_file() {
 path_to_ignore() {
     parse_ignore_file "$2"
 }
+
+all_text() {
+    unset cuopt_SEARCH_BINARY
+    unset cuopt_FILETYPE
+    unset cuopt_IGNORE_FILES
+}
+
 
 
 create_ignore_subexpr() {
@@ -257,6 +271,7 @@ find_options() {
     add_option -O2
     add_option --
 
+
     # Starting Points
     for arg in "$@"; do
         if pattern_match "$arg" "-*"; then
@@ -267,6 +282,9 @@ find_options() {
     done
 
     # Expression
+
+    test -n "$cuopt_ONE_DEVICE" && add_option -mount
+
     test -n "$cuopt_SEARCH_DEPTH" && \
         add_options -maxdepth "$cuopt_SEARCH_DEPTH"
     test -z "${cuopt_HIDDEN_FILES}" && \
@@ -281,7 +299,7 @@ find_options() {
         add_options -name "$cuopt_FILE_MATCH_GLOB"
     create_ignore_subexpr
     if test -z "$cu_XARGS_NULL"; then
-        add_options -exec grep
+        add_options -exec "$GNUGREP"
         grep_options
         add_options {} +
     else
@@ -306,9 +324,9 @@ xargs_options() {
     test -n "$cu_XARGS_PARALLEL" && add_options -P "$cu_XARGS_PARALLEL"
     if test -n "$cu_STRICT_PARALLEL"; then
         # shellcheck disable=SC2016
-        add_options sh -c 'outdir="$1"; shift; outname="$(mktemp "$outdir/output.XXXXXXXX")"; grep "$@" > $outname; mv "$outname" "$outname.done"' -- "$1"
+        add_options sh -c 'outdir="$1"; shift; outname="$(mktemp "$outdir/output.XXXXXXXX")"; "$GNUGREP" "$@" > $outname; mv "$outname" "$outname.done"' -- "$1"
     else
-        add_option grep
+        add_option "$GNUGREP"
     fi
     grep_options
     unset cu_OPTION_PRINTED
@@ -356,13 +374,16 @@ invoke_search() {
 
 parse_options "$@"
 test -n "$cuopt_NO_FILENAME" && cuopt_NO_GROUP=yes
-test -n "$cu_XARGS_PARALLEL" && cuopt_NO_GROUP=yes
 
 if test -n "$cuopt_IGNORE_FILES"; then
     for file in $cuopt_IGNORE_FILES; do
         test -f "$file" && parse_ignore_file "$file"
     done
 fi
+
+GREP_COLORS="$(printf 'mt=%s:fn=%s:ln=%s\n' "$cuopt_COLOR_MATCH" "$cuopt_COLOR_PATH" "$cuopt_COLOR_LINE_NUMBER")"
+export GREP_COLORS
+
 oldIFS="$IFS"
 IFS="$cu_RS"
 set -f
